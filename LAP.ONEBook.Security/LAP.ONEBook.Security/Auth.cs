@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Text;
+using System.Data.SqlClient;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.Serialization.Json;
-using System.Diagnostics;
-using System.Data.SqlClient;
+using System.Text;
 
 namespace LAP.ONEBook.Security
 {
@@ -11,17 +11,18 @@ namespace LAP.ONEBook.Security
     {
         private readonly SqlConnectionStringBuilder _sqlClientDBConnectionSB;
         private readonly IStorageProvider _storageProvider;
+
         public bool IsTest { set; get; }
 
         public Auth(IStorageProvider StorageProvider)
         {
             _storageProvider = StorageProvider;
         }
-        public Auth(string SqlClientDBConnectionString)
-        {
-            _sqlClientDBConnectionSB = new SqlConnectionStringBuilder(SqlClientDBConnectionString);
 
-            _storageProvider = new DefaultProvider(SqlClientDBConnectionString);
+        public Auth(string sqlClientDBConnectionString)
+        {
+            _sqlClientDBConnectionSB = new SqlConnectionStringBuilder(sqlClientDBConnectionString);
+            _storageProvider = new DefaultProvider(sqlClientDBConnectionString);
         }
 
         public string ApplyToken(T t)
@@ -44,10 +45,8 @@ namespace LAP.ONEBook.Security
         public T Authenticate(string sToken)
         {
             var sPermissionData = "";
-
             sPermissionData = _storageProvider.Authenticate(sToken);
-            //
-            return sPermissionData.Length == 0 ? default(T) : FromJson(sPermissionData);
+            return string.IsNullOrEmpty(sPermissionData) ? default(T) : FromJson(sPermissionData);
         }
 
         public bool Authenticate(string sToken, ref T t)
@@ -56,7 +55,7 @@ namespace LAP.ONEBook.Security
 
             sPermissionData = _storageProvider.Authenticate(sToken);
 
-            if (sPermissionData.Length == 0)
+            if (string.IsNullOrEmpty(sPermissionData))
             {
                 t = default(T);
                 return false;
@@ -67,7 +66,6 @@ namespace LAP.ONEBook.Security
                 return true;
             }
         }
-
 
         private static string ToJson(T t)
         {
