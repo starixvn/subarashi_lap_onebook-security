@@ -1,4 +1,6 @@
-﻿using System.Data.SqlClient;
+﻿using System;
+using System.Data;
+using System.Data.SqlClient;
 
 namespace LAP.ONEBook.Security.StorageProviders
 {
@@ -10,39 +12,50 @@ namespace LAP.ONEBook.Security.StorageProviders
         {
             _connectionString = ConnectionString;
         }
+
         public void ApplyToken(string token, string permissionData, int expiry = 1)
         {
-            using (SqlConnection SqlCon = new SqlConnection(_connectionString))
+            ExecuteStoredProcedure("dbo.Dot_Auth_TokenIns", sqlCmd =>
             {
-                var sSPname = "dbo.Dot_Auth_TokenIns";
-
-                using (SqlCommand SqlCmd = new SqlCommand(sSPname, SqlCon))
-                {
-                    SqlCmd.CommandType = System.Data.CommandType.StoredProcedure;
-                    SqlCmd.Parameters.Add("@Token", System.Data.SqlDbType.VarChar).Value = token;
-                    SqlCmd.Parameters.Add("@PermissionData", System.Data.SqlDbType.VarChar).Value = permissionData;
-                    SqlCmd.Parameters.Add("@Expiry", System.Data.SqlDbType.Int).Value = expiry;
-                    SqlCon.Open();
-                    SqlCmd.ExecuteNonQuery();
-                }
-            }
+                AddCommandParameter(sqlCmd, "@Token", token);
+                AddCommandParameter(sqlCmd, "@PermissionData", permissionData);
+                AddCommandParameter(sqlCmd, "@Expiry", expiry);
+                sqlCmd.ExecuteNonQuery();
+            });
         }
 
         public string Authenticate(string token)
         {
-            using (SqlConnection SqlCon = new SqlConnection(_connectionString))
-            {
-                var sSPname = "dbo.Dot_Auth_PermissionDataSel";
+            string result = null;
 
-                using (SqlCommand SqlCmd = new SqlCommand(sSPname, SqlCon))
+            ExecuteStoredProcedure("dbo.Dot_Auth_PermissionDataSel", sqlCmd =>
+            {
+                AddCommandParameter(sqlCmd, "@Token", token);
+                result = sqlCmd.ExecuteScalar().ToString();
+            });
+
+            return result;
+        }
+
+        protected virtual void ExecuteStoredProcedure(string commandText, Action<IDbCommand> executer)
+        {
+            using (var sqlCon = new SqlConnection(_connectionString))
+            {
+                using (var sqlCmd = new SqlCommand(commandText, sqlCon))
                 {
-                    SqlCmd.CommandType = System.Data.CommandType.StoredProcedure;
-                    SqlCmd.Parameters.Add("@Token", System.Data.SqlDbType.VarChar).Value = token;
-                    SqlCon.Open();
-                    return SqlCmd.ExecuteScalar().ToString();
+                    sqlCmd.CommandType = CommandType.StoredProcedure;
+                    sqlCon.Open();
+                    executer(sqlCmd);
                 }
             }
         }
-    }
 
+        private void AddCommandParameter<T>(IDbCommand command, string name, T value)
+        {
+            var param = command.CreateParameter();
+            param.ParameterName = name;
+            param.Value = value;
+            command.Parameters.Add(param);
+        }
+    }
 }
