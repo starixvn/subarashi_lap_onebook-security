@@ -25,16 +25,16 @@ namespace LAP.ONEBook.Security.StorageProviders
             return db.StringSetAsync(token, permissionData, TimeSpan.FromMinutes(expiry));
         }
 
-        public string Authenticate(string key)
+        public string Authenticate(string token)
         {
             var db = _connection.GetDatabase();
-            return db.StringGetSet(key, string.Empty);
+            return db.StringGetSet(token, string.Empty);
         }
 
-        public async Task<string> AuthenticateAsync(string key)
+        public async Task<string> AuthenticateAsync(string token)
         {
             var db = _connection.GetDatabase();
-            return await db.StringGetSetAsync(key, string.Empty);
+            return await db.StringGetSetAsync(token, string.Empty);
         }
     }
 }

@@ -15,8 +15,8 @@ namespace LAP.ONEBook.Security.StorageProviders
 
         void ApplyToken(string token, string permissionData, int expiry = 1);
 
-        Task<string> AuthenticateAsync(string key);
+        Task<string> AuthenticateAsync(string token);
 
-        string Authenticate(string key);
+        string Authenticate(string token);
     }
 }
