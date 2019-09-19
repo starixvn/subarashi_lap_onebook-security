@@ -10,6 +10,8 @@ namespace LAP.ONEBook.Security
 {
     public class Auth<T>
     {
+        private const int TOKEN_TIME = 1;
+
         private readonly SqlConnectionStringBuilder _sqlClientDBConnectionSB;
         private readonly IStorageProvider _storageProvider;
 
@@ -28,73 +30,71 @@ namespace LAP.ONEBook.Security
 
         public string ApplyToken(T t)
         {
-            return ApplyToken(t, 1);
+            return ApplyToken(t, TOKEN_TIME);
         }
 
-        public string ApplyToken(T t, int expiry = 1)
+        public string ApplyToken(T t, int expiry)
         {
-            var g = Guid.NewGuid();
-            var GuidString = Convert.ToBase64String(g.ToByteArray());
-            GuidString = GuidString.Replace("=", "");
-            GuidString = GuidString.Replace("+", "");
+            var guid = Guid.NewGuid();
+            var guidString = Convert.ToBase64String(guid.ToByteArray()).Replace("=", "").Replace("+", "");
 
-            _storageProvider.ApplyToken(GuidString, ToJson(t), expiry);
+            _storageProvider.ApplyToken(guidString, ToJson(t), expiry);
 
-            return GuidString;
+            return guidString;
         }
 
-        public T Authenticate(string sToken)
+        public T Authenticate(string token)
         {
-            var sPermissionData = "";
-            sPermissionData = _storageProvider.Authenticate(sToken);
-            return string.IsNullOrEmpty(sPermissionData) ? default(T) : FromJson(sPermissionData);
+            var permissionData = _storageProvider.Authenticate(token);
+            return string.IsNullOrEmpty(permissionData) ? default(T) : FromJson(permissionData);
         }
 
-        public bool Authenticate(string sToken, ref T t)
+        public bool Authenticate(string token, ref T permission)
         {
-            var sPermissionData = "";
-
-            sPermissionData = _storageProvider.Authenticate(sToken);
-
-            if (string.IsNullOrEmpty(sPermissionData))
+            string permissionData = _storageProvider.Authenticate(token);
+            if (string.IsNullOrEmpty(permissionData))
             {
-                t = default(T);
+                permission = default(T);
                 return false;
             }
             else
             {
-                t = FromJson(sPermissionData);
+                permission = FromJson(permissionData);
                 return true;
             }
         }
 
         private static string ToJson(T t)
         {
-            var stream = new MemoryStream();
-            var dcs = new DataContractJsonSerializer(t.GetType());
-            dcs.WriteObject(stream, t);
-
-            stream.Position = 0;
-            using (var streamReader = new StreamReader(stream))
+            using (var stream = new MemoryStream())
             {
-                var json = streamReader.ReadToEnd();
+                var dcs = new DataContractJsonSerializer(typeof(T));
+                dcs.WriteObject(stream, t);
+                stream.Position = 0;
 
-                return json.Replace("\\/", "/");
+                using (var streamReader = new StreamReader(stream))
+                {
+                    var json = streamReader.ReadToEnd();
+                    return json.Replace("\\/", "/");
+                }
             }
         }
 
         private static T FromJson(string jsonString)
         {
-            var stream = new MemoryStream();
-            var dcs = new DataContractJsonSerializer(typeof(T));
-            var bytes = StringToUtf8ByteArray(jsonString);
-            stream.Write(bytes, 0, bytes.Length);
-            stream.Position = 0;
+            using (var stream = new MemoryStream())
+            {
+                var dcs = new DataContractJsonSerializer(typeof(T));
+                var bytes = StringToUtf8ByteArray(jsonString);
 
-            return (T)dcs.ReadObject(stream);
+                stream.Write(bytes, 0, bytes.Length);
+                stream.Position = 0;
+
+                return (T)dcs.ReadObject(stream);
+            }
         }
 
-        private static Byte[] StringToUtf8ByteArray(string value)
+        private static byte[] StringToUtf8ByteArray(string value)
         {
             Debug.Assert(value != null);
 
