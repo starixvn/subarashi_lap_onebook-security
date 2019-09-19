@@ -1,5 +1,6 @@
 ﻿using StackExchange.Redis;
 using System;
+using System.Threading.Tasks;
 
 namespace LAP.ONEBook.Security.StorageProviders
 {
@@ -18,10 +19,20 @@ namespace LAP.ONEBook.Security.StorageProviders
             db.StringSet(token, permissionData, TimeSpan.FromMinutes(expiry));
         }
 
+        public Task ApplyTokenAsync(string token, string permissionData, int expiry = 1)
+        {
+            throw new NotImplementedException();
+        }
+
         public string Authenticate(string key)
         {
             var db = _connection.GetDatabase();
             return db.StringGetSet(key, string.Empty);
+        }
+
+        public Task<string> AuthenticateAsync(string key)
+        {
+            throw new NotImplementedException();
         }
     }
 }

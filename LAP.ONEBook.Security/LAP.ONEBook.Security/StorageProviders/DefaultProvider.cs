@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
+using System.Threading.Tasks;
 
 namespace LAP.ONEBook.Security.StorageProviders
 {
@@ -24,6 +25,11 @@ namespace LAP.ONEBook.Security.StorageProviders
             });
         }
 
+        public Task ApplyTokenAsync(string token, string permissionData, int expiry = 1)
+        {
+            throw new NotImplementedException();
+        }
+
         public string Authenticate(string token)
         {
             string result = null;
@@ -35,6 +41,11 @@ namespace LAP.ONEBook.Security.StorageProviders
             });
 
             return result;
+        }
+
+        public Task<string> AuthenticateAsync(string key)
+        {
+            throw new NotImplementedException();
         }
 
         protected virtual void ExecuteStoredProcedure(string commandText, Action<IDbCommand> executer)
