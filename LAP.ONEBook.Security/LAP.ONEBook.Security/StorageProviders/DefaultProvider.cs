@@ -1,6 +1,6 @@
 ﻿using System.Data.SqlClient;
 
-namespace LAP.ONEBook.Security
+namespace LAP.ONEBook.Security.StorageProviders
 {
     internal class DefaultProvider : IStorageProvider
     {

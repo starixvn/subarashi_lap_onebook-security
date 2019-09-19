@@ -1,4 +1,4 @@
-﻿namespace LAP.ONEBook.Security
+﻿namespace LAP.ONEBook.Security.StorageProviders
 {
     public interface IStorageProvider
     {
