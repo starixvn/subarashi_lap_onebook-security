@@ -21,7 +21,8 @@ namespace LAP.ONEBook.Security.StorageProviders
 
         public Task ApplyTokenAsync(string token, string permissionData, int expiry = 1)
         {
-            throw new NotImplementedException();
+            var db = _connection.GetDatabase();
+            return db.StringSetAsync(token, permissionData, TimeSpan.FromMinutes(expiry));
         }
 
         public string Authenticate(string key)
@@ -30,9 +31,10 @@ namespace LAP.ONEBook.Security.StorageProviders
             return db.StringGetSet(key, string.Empty);
         }
 
-        public Task<string> AuthenticateAsync(string key)
+        public async Task<string> AuthenticateAsync(string key)
         {
-            throw new NotImplementedException();
+            var db = _connection.GetDatabase();
+            return await db.StringGetSetAsync(key, string.Empty);
         }
     }
 }
