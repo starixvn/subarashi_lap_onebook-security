@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Data;
+using System.Data.Common;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 
 namespace LAP.ONEBook.Security.StorageProviders
 {
-    internal class DefaultProvider : IStorageProvider
+    public class DefaultProvider : IStorageProvider
     {
+        private const string SpAuthPermissionDataSelect = "dbo.Dot_Auth_PermissionDataSel";
+        private const string SpAuthTokenInsert = "dbo.Dot_Auth_TokenIns";
+
         private readonly string _connectionString;
 
         public DefaultProvider(string ConnectionString)
@@ -16,7 +20,7 @@ namespace LAP.ONEBook.Security.StorageProviders
 
         public void ApplyToken(string token, string permissionData, int expiry = 1)
         {
-            ExecuteStoredProcedure("dbo.Dot_Auth_TokenIns", sqlCmd =>
+            ExecuteStoredProcedure(SpAuthTokenInsert, sqlCmd =>
             {
                 AddCommandParameter(sqlCmd, "@Token", token);
                 AddCommandParameter(sqlCmd, "@PermissionData", permissionData);
@@ -27,14 +31,20 @@ namespace LAP.ONEBook.Security.StorageProviders
 
         public Task ApplyTokenAsync(string token, string permissionData, int expiry = 1)
         {
-            throw new NotImplementedException();
+            return ExecuteStoredProcedureAsync(SpAuthTokenInsert, sqlCmd =>
+            {
+                AddCommandParameter(sqlCmd, "@Token", token);
+                AddCommandParameter(sqlCmd, "@PermissionData", permissionData);
+                AddCommandParameter(sqlCmd, "@Expiry", expiry);
+                return sqlCmd.ExecuteNonQueryAsync();
+            });
         }
 
         public string Authenticate(string token)
         {
             string result = null;
 
-            ExecuteStoredProcedure("dbo.Dot_Auth_PermissionDataSel", sqlCmd =>
+            ExecuteStoredProcedure(SpAuthPermissionDataSelect, sqlCmd =>
             {
                 AddCommandParameter(sqlCmd, "@Token", token);
                 result = sqlCmd.ExecuteScalar().ToString();
@@ -43,12 +53,20 @@ namespace LAP.ONEBook.Security.StorageProviders
             return result;
         }
 
-        public Task<string> AuthenticateAsync(string key)
+        public async Task<string> AuthenticateAsync(string token)
         {
-            throw new NotImplementedException();
+            string result = null;
+
+            await ExecuteStoredProcedureAsync(SpAuthPermissionDataSelect, async sqlCmd =>
+            {
+                AddCommandParameter(sqlCmd, "@Token", token);
+                result = (await sqlCmd.ExecuteScalarAsync()).ToString();
+            });
+
+            return result;
         }
 
-        protected virtual void ExecuteStoredProcedure(string commandText, Action<IDbCommand> executer)
+        protected virtual void ExecuteStoredProcedure(string commandText, Action<DbCommand> executer)
         {
             using (var sqlCon = new SqlConnection(_connectionString))
             {
@@ -57,6 +75,19 @@ namespace LAP.ONEBook.Security.StorageProviders
                     sqlCmd.CommandType = CommandType.StoredProcedure;
                     sqlCon.Open();
                     executer(sqlCmd);
+                }
+            }
+        }
+
+        protected virtual async Task ExecuteStoredProcedureAsync(string commandText, Func<DbCommand, Task> executerAsync)
+        {
+            using (var sqlCon = new SqlConnection(_connectionString))
+            {
+                using (var sqlCmd = new SqlCommand(commandText, sqlCon))
+                {
+                    sqlCmd.CommandType = CommandType.StoredProcedure;
+                    await sqlCon.OpenAsync();
+                    await executerAsync(sqlCmd);
                 }
             }
         }
