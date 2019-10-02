@@ -49,8 +49,9 @@ namespace LAP.ONEBook.Security
 
         public T Authenticate(string token)
         {
-            var permissionData = _storageProvider.Authenticate(token);
-            return string.IsNullOrEmpty(permissionData) ? default(T) : FromJson(permissionData);
+            T permission = default(T);
+            Authenticate(token, ref permission);
+            return permission;
         }
 
         public bool Authenticate(string token, ref T permission)
@@ -61,16 +62,17 @@ namespace LAP.ONEBook.Security
                 permission = default(T);
                 return false;
             }
-            else
-            {
-                permission = FromJson(permissionData);
-                return true;
-            }
-        }
 
-        private static T FromJson(string jsonString)
-        {
-            return JsonConvert.DeserializeObject<T>(jsonString, _jsonSerializerSettings);
+            try
+            {
+                permission = JsonConvert.DeserializeObject<T>(permissionData, _jsonSerializerSettings);
+            }
+            catch (JsonException e)
+            {
+                throw new Exception($"Error: {e.Message}\r\nPermissionData: {permissionData}", e);
+            }
+
+            return true;
         }
     }
 }

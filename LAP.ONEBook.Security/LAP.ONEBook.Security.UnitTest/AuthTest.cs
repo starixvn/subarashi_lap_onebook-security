@@ -181,6 +181,20 @@ namespace LAP.ONEBook.Security.UnitTest
             Assert.Null(new Auth<TestAuthSerializationClass>(_mockStorage.Object).Authenticate("test-object"));
         }
 
+        [Fact]
+        public void Authenticate_InvalidJsonData_Throws()
+        {
+            // Arrange
+            _mockStorage.Setup(r => r.Authenticate(It.IsAny<string>())).Returns("invalid-permission-data");
+
+            // Action
+            var actual = Assert.Throws<Exception>(() => new Auth<int>(_mockStorage.Object).Authenticate("token"));
+            var originalException = actual.InnerException;
+
+            // Assert
+            Assert.Equal($"Error: {originalException.Message}\r\nPermissionData: invalid-permission-data", actual.Message);
+        }
+
         public class TestAuthSerializationClass
         {
             public string Name { get; set; }
