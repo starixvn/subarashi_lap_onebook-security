@@ -1,10 +1,7 @@
-﻿using LAP.ONEBook.Security.StorageProviders;
-using System;
+﻿using System;
 using System.Data.SqlClient;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime.Serialization.Json;
-using System.Text;
+using LAP.ONEBook.Security.StorageProviders;
+using Newtonsoft.Json;
 
 namespace LAP.ONEBook.Security
 {
@@ -14,6 +11,12 @@ namespace LAP.ONEBook.Security
 
         private readonly SqlConnectionStringBuilder _sqlClientDBConnectionSB;
         private readonly IStorageProvider _storageProvider;
+
+        private static JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
+        {
+            Formatting = Formatting.None,
+            DateTimeZoneHandling = DateTimeZoneHandling.Unspecified
+        };
 
         public bool IsTest { set; get; }
 
@@ -35,12 +38,13 @@ namespace LAP.ONEBook.Security
 
         public string ApplyToken(T t, int expiry)
         {
-            var guid = Guid.NewGuid();
-            var guidString = Convert.ToBase64String(guid.ToByteArray()).Replace("=", "").Replace("+", "");
+            var guid = Guid.NewGuid().ToByteArray();
+            var token = Convert.ToBase64String(guid).Replace("=", "").Replace("+", "").Replace("/", "");
+            var data = JsonConvert.SerializeObject(t, _jsonSerializerSettings);
 
-            _storageProvider.ApplyToken(guidString, ToJson(t), expiry);
+            _storageProvider.ApplyToken(token, data, expiry);
 
-            return guidString;
+            return token;
         }
 
         public T Authenticate(string token)
@@ -64,43 +68,9 @@ namespace LAP.ONEBook.Security
             }
         }
 
-        private static string ToJson(T t)
-        {
-            using (var stream = new MemoryStream())
-            {
-                var dcs = new DataContractJsonSerializer(typeof(T));
-                dcs.WriteObject(stream, t);
-                stream.Position = 0;
-
-                using (var streamReader = new StreamReader(stream))
-                {
-                    var json = streamReader.ReadToEnd();
-                    return json.Replace("\\/", "/");
-                }
-            }
-        }
-
         private static T FromJson(string jsonString)
         {
-            using (var stream = new MemoryStream())
-            {
-                var dcs = new DataContractJsonSerializer(typeof(T));
-                var bytes = StringToUtf8ByteArray(jsonString);
-
-                stream.Write(bytes, 0, bytes.Length);
-                stream.Position = 0;
-
-                return (T)dcs.ReadObject(stream);
-            }
-        }
-
-        private static byte[] StringToUtf8ByteArray(string value)
-        {
-            Debug.Assert(value != null);
-
-            var encoding = new UTF8Encoding();
-            var byteArray = encoding.GetBytes(value);
-            return byteArray;
+            return JsonConvert.DeserializeObject<T>(jsonString, _jsonSerializerSettings);
         }
     }
 }
