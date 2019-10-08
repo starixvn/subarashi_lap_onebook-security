@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using LAP.ONEBook.Security.StorageProviders;
 using Moq;
 using Xunit;
 

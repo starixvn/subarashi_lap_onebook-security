@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Data.SqlClient;
-using LAP.ONEBook.Security.StorageProviders;
 using Newtonsoft.Json;
 
 namespace LAP.ONEBook.Security
@@ -9,7 +7,6 @@ namespace LAP.ONEBook.Security
     {
         private const int TOKEN_TIME = 1;
 
-        private readonly SqlConnectionStringBuilder _sqlClientDBConnectionSB;
         private readonly IStorageProvider _storageProvider;
 
         private static JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
@@ -20,15 +17,9 @@ namespace LAP.ONEBook.Security
 
         public bool IsTest { set; get; }
 
-        public Auth(IStorageProvider StorageProvider)
+        public Auth(IStorageProvider storageProvider)
         {
-            _storageProvider = StorageProvider;
-        }
-
-        public Auth(string sqlClientDBConnectionString)
-        {
-            _sqlClientDBConnectionSB = new SqlConnectionStringBuilder(sqlClientDBConnectionString);
-            _storageProvider = new DefaultProvider(sqlClientDBConnectionString);
+            _storageProvider = storageProvider;
         }
 
         public string ApplyToken(T t)

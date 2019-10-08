@@ -2,16 +2,16 @@
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 
-namespace LAP.ONEBook.Security.StorageProviders
+namespace LAP.ONEBook.Security.StorageProvider.SqlServer
 {
-    public class DefaultProvider : IStorageProvider
+    public class SqlServerProvider : IStorageProvider
     {
         private const string SpAuthPermissionDataSelect = "dbo.Dot_Auth_PermissionDataSel";
         private const string SpAuthTokenInsert = "dbo.Dot_Auth_TokenIns";
 
         private readonly string _connectionString;
 
-        public DefaultProvider(string ConnectionString)
+        public SqlServerProvider(string ConnectionString)
         {
             _connectionString = ConnectionString;
         }

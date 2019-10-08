@@ -1,7 +1,7 @@
-﻿using LAP.ONEBook.Security.StorageProviders;
+﻿using System;
+using LAP.ONEBook.Security.StorageProvider.Redis;
 using Moq;
 using StackExchange.Redis;
-using System;
 using Xunit;
 
 namespace LAP.ONEBook.Security.UnitTest.StorageProviders

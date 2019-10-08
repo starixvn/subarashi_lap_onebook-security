@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace LAP.ONEBook.Security.StorageProviders
+namespace LAP.ONEBook.Security
 {
     public interface IStorageProvider
     {
