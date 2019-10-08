@@ -5,6 +5,7 @@
     <Authors>bruce.bui</Authors>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
