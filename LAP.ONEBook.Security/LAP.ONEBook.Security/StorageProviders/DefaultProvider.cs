@@ -1,6 +1,4 @@
-﻿using System;
-using System.Data;
-using System.Data.Common;
+﻿using System.Data;
 using System.Data.SqlClient;
 using System.Threading.Tasks;
 
@@ -20,84 +18,66 @@ namespace LAP.ONEBook.Security.StorageProviders
 
         public void ApplyToken(string token, string permissionData, int expiry = 1)
         {
-            ExecuteStoredProcedure(SpAuthTokenInsert, sqlCmd =>
+            using (var conn = new SqlConnection(_connectionString))
             {
-                AddCommandParameter(sqlCmd, "@Token", token);
-                AddCommandParameter(sqlCmd, "@PermissionData", permissionData);
-                AddCommandParameter(sqlCmd, "@Expiry", expiry);
-                sqlCmd.ExecuteNonQuery();
-            });
+                using (var cmd = new SqlCommand(SpAuthTokenInsert, conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Token", token);
+                    cmd.Parameters.AddWithValue("@PermissionData", permissionData);
+                    cmd.Parameters.AddWithValue("@Expiry", expiry);
+                    conn.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
 
-        public Task ApplyTokenAsync(string token, string permissionData, int expiry = 1)
+        public async Task ApplyTokenAsync(string token, string permissionData, int expiry = 1)
         {
-            return ExecuteStoredProcedureAsync(SpAuthTokenInsert, sqlCmd =>
+            using (var conn = new SqlConnection(_connectionString))
             {
-                AddCommandParameter(sqlCmd, "@Token", token);
-                AddCommandParameter(sqlCmd, "@PermissionData", permissionData);
-                AddCommandParameter(sqlCmd, "@Expiry", expiry);
-                return sqlCmd.ExecuteNonQueryAsync();
-            });
+                using (var cmd = new SqlCommand(SpAuthTokenInsert, conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Token", token);
+                    cmd.Parameters.AddWithValue("@PermissionData", permissionData);
+                    cmd.Parameters.AddWithValue("@Expiry", expiry);
+
+                    await conn.OpenAsync();
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
         }
 
         public string Authenticate(string token)
         {
-            string result = null;
-
-            ExecuteStoredProcedure(SpAuthPermissionDataSelect, sqlCmd =>
+            using (var conn = new SqlConnection(_connectionString))
             {
-                AddCommandParameter(sqlCmd, "@Token", token);
-                result = sqlCmd.ExecuteScalar().ToString();
-            });
-
-            return result;
+                using (var cmd = new SqlCommand(SpAuthPermissionDataSelect, conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Token", token);
+                    conn.Open();
+                    return cmd.ExecuteScalar().ToString();
+                }
+            }
         }
 
         public async Task<string> AuthenticateAsync(string token)
         {
-            string result = null;
-
-            await ExecuteStoredProcedureAsync(SpAuthPermissionDataSelect, async sqlCmd =>
+            using (var conn = new SqlConnection(_connectionString))
             {
-                AddCommandParameter(sqlCmd, "@Token", token);
-                result = (await sqlCmd.ExecuteScalarAsync()).ToString();
-            });
-
-            return result;
-        }
-
-        protected virtual void ExecuteStoredProcedure(string commandText, Action<DbCommand> executer)
-        {
-            using (var sqlCon = new SqlConnection(_connectionString))
-            {
-                using (var sqlCmd = new SqlCommand(commandText, sqlCon))
+                using (var cmd = new SqlCommand(SpAuthPermissionDataSelect, conn))
                 {
-                    sqlCmd.CommandType = CommandType.StoredProcedure;
-                    sqlCon.Open();
-                    executer(sqlCmd);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Token", token);
+
+                    await conn.OpenAsync();
+                    var result = await cmd.ExecuteScalarAsync();
+
+                    return result.ToString();
                 }
             }
-        }
-
-        protected virtual async Task ExecuteStoredProcedureAsync(string commandText, Func<DbCommand, Task> executerAsync)
-        {
-            using (var sqlCon = new SqlConnection(_connectionString))
-            {
-                using (var sqlCmd = new SqlCommand(commandText, sqlCon))
-                {
-                    sqlCmd.CommandType = CommandType.StoredProcedure;
-                    await sqlCon.OpenAsync();
-                    await executerAsync(sqlCmd);
-                }
-            }
-        }
-
-        private void AddCommandParameter<T>(IDbCommand command, string name, T value)
-        {
-            var param = command.CreateParameter();
-            param.ParameterName = name;
-            param.Value = value;
-            command.Parameters.Add(param);
         }
     }
 }
