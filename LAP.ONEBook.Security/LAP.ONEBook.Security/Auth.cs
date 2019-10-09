@@ -29,22 +29,25 @@ namespace LAP.ONEBook.Security
 
         public string ApplyToken(T t, int expiry)
         {
-            var guid = Guid.NewGuid().ToByteArray();
-            var token = Convert.ToBase64String(guid).Replace("=", "").Replace("+", "").Replace("/", "");
-            var data = JsonConvert.SerializeObject(t, _jsonSerializerSettings);
+            GenerateTokenInfo(t, out string token, out string data);
 
             _storageProvider.ApplyToken(token, data, expiry);
 
             return token;
         }
 
+        private static void GenerateTokenInfo(T t, out string token, out string data)
+        {
+            var guid = Guid.NewGuid().ToByteArray();
+            token = Convert.ToBase64String(guid).Replace("=", "").Replace("+", "").Replace("/", "");
+            data = JsonConvert.SerializeObject(t, _jsonSerializerSettings);
+        }
+
         public Task<string> ApplyTokenAsync(T t) => ApplyTokenAsync(t, TOKEN_TIME);
 
         public async Task<string> ApplyTokenAsync(T t, int expiry)
         {
-            var guid = Guid.NewGuid().ToByteArray();
-            var token = Convert.ToBase64String(guid).Replace("=", "").Replace("+", "").Replace("/", "");
-            var data = JsonConvert.SerializeObject(t, _jsonSerializerSettings);
+            GenerateTokenInfo(t, out string token, out string data);
 
             await _storageProvider.ApplyTokenAsync(token, data, expiry).ConfigureAwait(false);
 
@@ -87,7 +90,7 @@ namespace LAP.ONEBook.Security
             return default(T);
         }
 
-        private Exception CustomException(string token, string data, Exception e)
+        private static Exception CustomException(string token, string data, Exception e)
         {
             return new Exception($"Authenticate error: {e.Message}\r\nToken={token}\r\nData={data}", e);
         }
