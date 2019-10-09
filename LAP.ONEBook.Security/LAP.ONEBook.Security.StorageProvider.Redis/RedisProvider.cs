@@ -1,50 +1,40 @@
-﻿using System;
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
+using System;
+using System.Threading.Tasks;
 
 namespace LAP.ONEBook.Security.StorageProvider.Redis
 {
     public class RedisProvider : IStorageProvider
     {
-        private readonly ConfigurationOptions _configOptions;
+        private readonly IConnectionMultiplexer _connection;
 
-        public RedisProvider(string configString)
+        public RedisProvider(IConnectionMultiplexer connection)
         {
-            if (string.IsNullOrEmpty(configString))
-            {
-                throw new ArgumentNullException(nameof(configString));
-            }
-
-            _configOptions = ConfigurationOptions.Parse(configString);
-        }
-
-        public RedisProvider(ConfigurationOptions configOptions)
-        {
-            _configOptions = configOptions ?? throw new ArgumentNullException(nameof(configOptions));
+            _connection = connection;
         }
 
         public void ApplyToken(string token, string permissionData, int expiry = 1)
         {
-            using (var conn = ConnectionMultiplexer.Connect(_configOptions))
-            {
-                var db = conn.GetDatabase();
-                db.StringSet(token, permissionData, TimeSpan.FromMinutes(expiry));
-            }
+            var db = _connection.GetDatabase();
+            db.StringSet(token, permissionData, TimeSpan.FromMinutes(expiry));
+        }
+
+        public Task ApplyTokenAsync(string token, string permissionData, int expiry = 1)
+        {
+            var db = _connection.GetDatabase();
+            return db.StringSetAsync(token, permissionData, TimeSpan.FromMinutes(expiry));
         }
 
         public string Authenticate(string token)
         {
-            using (var conn = ConnectionMultiplexer.Connect(_configOptions))
-            {
-                var db = conn.GetDatabase();
-                var data = db.StringGet(token);
+            var db = _connection.GetDatabase();
+            return db.StringGetSet(token, string.Empty);
+        }
 
-                if (data.HasValue)
-                {
-                    db.KeyDelete(token);
-                }
-
-                return data;
-            }
+        public async Task<string> AuthenticateAsync(string token)
+        {
+            var db = _connection.GetDatabase();
+            return await db.StringGetSetAsync(token, string.Empty);
         }
     }
 }

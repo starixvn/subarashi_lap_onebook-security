@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
+using System.Threading.Tasks;
 
 namespace LAP.ONEBook.Security.StorageProvider.SqlServer
 {
@@ -31,6 +32,23 @@ namespace LAP.ONEBook.Security.StorageProvider.SqlServer
             }
         }
 
+        public async Task ApplyTokenAsync(string token, string permissionData, int expiry = 1)
+        {
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                using (var cmd = new SqlCommand(SpAuthTokenInsert, conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Token", token);
+                    cmd.Parameters.AddWithValue("@PermissionData", permissionData);
+                    cmd.Parameters.AddWithValue("@Expiry", expiry);
+
+                    await conn.OpenAsync();
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
         public string Authenticate(string token)
         {
             using (var conn = new SqlConnection(_connectionString))
@@ -41,6 +59,23 @@ namespace LAP.ONEBook.Security.StorageProvider.SqlServer
                     cmd.Parameters.AddWithValue("@Token", token);
                     conn.Open();
                     return cmd.ExecuteScalar()?.ToString();
+                }
+            }
+        }
+
+        public async Task<string> AuthenticateAsync(string token)
+        {
+            using (var conn = new SqlConnection(_connectionString))
+            {
+                using (var cmd = new SqlCommand(SpAuthPermissionDataSelect, conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@Token", token);
+
+                    await conn.OpenAsync();
+                    var result = await cmd.ExecuteScalarAsync();
+
+                    return result.ToString();
                 }
             }
         }
