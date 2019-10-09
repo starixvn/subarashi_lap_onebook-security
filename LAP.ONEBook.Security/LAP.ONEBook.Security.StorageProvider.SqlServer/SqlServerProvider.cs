@@ -11,9 +11,9 @@ namespace LAP.ONEBook.Security.StorageProvider.SqlServer
 
         private readonly string _connectionString;
 
-        public SqlServerProvider(string ConnectionString)
+        public SqlServerProvider(string connectionString)
         {
-            _connectionString = ConnectionString;
+            _connectionString = connectionString;
         }
 
         public void ApplyToken(string token, string permissionData, int expiry = 1)
@@ -58,7 +58,7 @@ namespace LAP.ONEBook.Security.StorageProvider.SqlServer
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@Token", token);
                     conn.Open();
-                    return cmd.ExecuteScalar().ToString();
+                    return cmd.ExecuteScalar()?.ToString();
                 }
             }
         }
