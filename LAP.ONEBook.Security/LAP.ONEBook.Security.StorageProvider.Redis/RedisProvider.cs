@@ -5,23 +5,46 @@ namespace LAP.ONEBook.Security.StorageProvider.Redis
 {
     public class RedisProvider : IStorageProvider
     {
-        private readonly IConnectionMultiplexer _connection;
+        private readonly ConfigurationOptions _configOptions;
 
-        public RedisProvider(IConnectionMultiplexer connection)
+        public RedisProvider(string configString)
         {
-            _connection = connection;
+            if (string.IsNullOrEmpty(configString))
+            {
+                throw new ArgumentNullException(nameof(configString));
+            }
+
+            _configOptions = ConfigurationOptions.Parse(configString);
+        }
+
+        public RedisProvider(ConfigurationOptions configOptions)
+        {
+            _configOptions = configOptions ?? throw new ArgumentNullException(nameof(configOptions));
         }
 
         public void ApplyToken(string token, string permissionData, int expiry = 1)
         {
-            var db = _connection.GetDatabase();
-            db.StringSet(token, permissionData, TimeSpan.FromMinutes(expiry));
+            using (var conn = ConnectionMultiplexer.Connect(_configOptions))
+            {
+                var db = conn.GetDatabase();
+                db.StringSet(token, permissionData, TimeSpan.FromMinutes(expiry));
+            }
         }
 
         public string Authenticate(string token)
         {
-            var db = _connection.GetDatabase();
-            return db.StringGetSet(token, string.Empty);
+            using (var conn = ConnectionMultiplexer.Connect(_configOptions))
+            {
+                var db = conn.GetDatabase();
+                var data = db.StringGet(token);
+
+                if (data.HasValue)
+                {
+                    db.KeyDelete(token);
+                }
+
+                return data;
+            }
         }
     }
 }
