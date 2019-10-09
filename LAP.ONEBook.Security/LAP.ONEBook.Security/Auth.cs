@@ -25,10 +25,7 @@ namespace LAP.ONEBook.Security
             _storageProvider = storageProvider;
         }
 
-        public string ApplyToken(T t)
-        {
-            return ApplyToken(t, TOKEN_TIME);
-        }
+        public string ApplyToken(T t) => ApplyToken(t, TOKEN_TIME);
 
         public string ApplyToken(T t, int expiry)
         {
@@ -41,10 +38,7 @@ namespace LAP.ONEBook.Security
             return token;
         }
 
-        public Task<string> ApplyTokenAsync(T t)
-        {
-            return ApplyTokenAsync(t, TOKEN_TIME);
-        }
+        public Task<string> ApplyTokenAsync(T t) => ApplyTokenAsync(t, TOKEN_TIME);
 
         public async Task<string> ApplyTokenAsync(T t, int expiry)
         {
@@ -56,19 +50,20 @@ namespace LAP.ONEBook.Security
 
             return token;
         }
+
         public T Authenticate(string token)
         {
+            var permissionData = _storageProvider.Authenticate(token);
             try
             {
-                var permissionData = _storageProvider.Authenticate(token);
                 if (!string.IsNullOrEmpty(permissionData))
                 {
                     return JsonConvert.DeserializeObject<T>(permissionData, _jsonSerializerSettings);
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw;
+                throw CustomException(token, permissionData, e);
             }
 
             return default(T);
@@ -76,20 +71,25 @@ namespace LAP.ONEBook.Security
 
         public async Task<T> AuthenticateAsync(string token)
         {
+            var permissionData = await _storageProvider.AuthenticateAsync(token).ConfigureAwait(false);
             try
             {
-                var permissionData = await _storageProvider.AuthenticateAsync(token).ConfigureAwait(false);
                 if (!string.IsNullOrEmpty(permissionData))
                 {
                     return JsonConvert.DeserializeObject<T>(permissionData, _jsonSerializerSettings);
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw;
+                throw CustomException(token, permissionData, e);
             }
 
             return default(T);
+        }
+
+        private Exception CustomException(string token, string data, Exception e)
+        {
+            return new Exception($"Authenticate error: {e.Message}\r\nToken={token}\r\nData={data}", e);
         }
     }
 }
