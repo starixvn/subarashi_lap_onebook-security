@@ -9,13 +9,11 @@ namespace LAP.ONEBook.Security
 
         private readonly IStorageProvider _storageProvider;
 
-        private static JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
+        private static readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
         {
             Formatting = Formatting.None,
             DateTimeZoneHandling = DateTimeZoneHandling.Unspecified
         };
-
-        public bool IsTest { set; get; }
 
         public Auth(IStorageProvider storageProvider)
         {
@@ -40,30 +38,20 @@ namespace LAP.ONEBook.Security
 
         public T Authenticate(string token)
         {
-            T permission = default(T);
-            Authenticate(token, ref permission);
-            return permission;
-        }
-
-        public bool Authenticate(string token, ref T permission)
-        {
-            string permissionData = _storageProvider.Authenticate(token);
-            if (string.IsNullOrEmpty(permissionData))
-            {
-                permission = default(T);
-                return false;
-            }
-
             try
             {
-                permission = JsonConvert.DeserializeObject<T>(permissionData, _jsonSerializerSettings);
+                var permissionData = _storageProvider.Authenticate(token);
+                if (!string.IsNullOrEmpty(permissionData))
+                {
+                    return JsonConvert.DeserializeObject<T>(permissionData, _jsonSerializerSettings);
+                }
             }
-            catch (JsonException e)
+            catch (Exception)
             {
-                throw new Exception($"Error: {e.Message}\r\nPermissionData: {permissionData}", e);
+                throw;
             }
 
-            return true;
+            return default(T);
         }
     }
 }
