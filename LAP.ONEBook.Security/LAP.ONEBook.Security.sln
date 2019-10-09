@@ -7,13 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAP.ONEBook.Security", "LAP
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAP.ONEBook.Security.UnitTest", "LAP.ONEBook.Security.UnitTest\LAP.ONEBook.Security.UnitTest.csproj", "{24CDC683-7D98-491C-9B8B-12ACB491B119}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LAP.ONEBook.Security.StorageProvider.SqlServer", "LAP.ONEBook.Security.StorageProvider.SqlServer\LAP.ONEBook.Security.StorageProvider.SqlServer.csproj", "{C7AFC720-4197-4AE1-BBA6-A022B5A8AF54}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAP.ONEBook.Security.StorageProvider.SqlServer", "LAP.ONEBook.Security.StorageProvider.SqlServer\LAP.ONEBook.Security.StorageProvider.SqlServer.csproj", "{C7AFC720-4197-4AE1-BBA6-A022B5A8AF54}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LAP.ONEBook.Security.StorageProvider.Redis", "LAP.ONEBook.Security.StorageProvider.Redis\LAP.ONEBook.Security.StorageProvider.Redis.csproj", "{B6D4AC8C-307B-4D7A-BC89-18BFB01548FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAP.ONEBook.Security.StorageProvider.Redis", "LAP.ONEBook.Security.StorageProvider.Redis\LAP.ONEBook.Security.StorageProvider.Redis.csproj", "{B6D4AC8C-307B-4D7A-BC89-18BFB01548FC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UnitTests", "UnitTests", "{AC9462FE-A817-4DED-8C8E-C247B15C4B4D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LAP.ONEBook.Security.StorageProvider.Redis.UnitTest", "LAP.ONEBook.Security.StorageProvider.Redis.UnitTest\LAP.ONEBook.Security.StorageProvider.Redis.UnitTest.csproj", "{DE6C8201-3848-415F-BB9D-77BB88E9F2AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LAP.ONEBook.Security.StorageProvider.Redis.UnitTest", "LAP.ONEBook.Security.StorageProvider.Redis.UnitTest\LAP.ONEBook.Security.StorageProvider.Redis.UnitTest.csproj", "{DE6C8201-3848-415F-BB9D-77BB88E9F2AA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
