@@ -35,6 +35,7 @@ junit/
 /cireport
 *.StyleCop.violations.xml
 *.StyleCop.xml
+/nuget
 *.FxCop.xml
 MsBuild.xml
 MSBUILD.SUMMARY.email
