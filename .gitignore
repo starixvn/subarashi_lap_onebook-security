@@ -66,3 +66,6 @@ stats.json
 
 /Fanex.Athena/package-lock.json
 /LAP.ONEBook.Security/.vs
+packages/
+TestReports/
+coverage*.xml
