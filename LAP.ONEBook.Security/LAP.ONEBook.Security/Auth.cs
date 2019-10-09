@@ -1,19 +1,14 @@
 ﻿using System;
+using System.IO;
+using System.Runtime.Serialization.Json;
+using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace LAP.ONEBook.Security
 {
     public class Auth<T> : IAuth<T>
     {
         private const int TOKEN_TIME = 1;
-
-        private static readonly JsonSerializerSettings _jsonSerializerSettings = new JsonSerializerSettings
-        {
-            Formatting = Formatting.None,
-            DateTimeZoneHandling = DateTimeZoneHandling.Unspecified
-        };
-
         private readonly IStorageProvider _storageProvider;
 
         protected Auth()
@@ -39,8 +34,8 @@ namespace LAP.ONEBook.Security
         private static void GenerateTokenInfo(T t, out string token, out string data)
         {
             var guid = Guid.NewGuid().ToByteArray();
-            token = Convert.ToBase64String(guid).Replace("=", "").Replace("+", "").Replace("/", "");
-            data = JsonConvert.SerializeObject(t, _jsonSerializerSettings);
+            token = Convert.ToBase64String(guid).Replace("=", "").Replace("+", "");
+            data = ToJson(t);
         }
 
         public Task<string> ApplyTokenAsync(T t) => ApplyTokenAsync(t, TOKEN_TIME);
@@ -57,42 +52,65 @@ namespace LAP.ONEBook.Security
         public T Authenticate(string token)
         {
             var permissionData = _storageProvider.Authenticate(token);
+            return DeserializeToken(token, permissionData);
+        }
+
+        private static T DeserializeToken(string token, string permissionData)
+        {
             try
             {
                 if (!string.IsNullOrEmpty(permissionData))
                 {
-                    return JsonConvert.DeserializeObject<T>(permissionData, _jsonSerializerSettings);
+                    return FromJson(permissionData);
                 }
             }
             catch (Exception e)
             {
-                throw CustomException(token, permissionData, e);
+                throw new Exception($"Authenticate error: {e.Message}\r\nToken={token}\r\nData={permissionData}", e);
             }
 
-            return default(T);
+            return default;
         }
 
         public async Task<T> AuthenticateAsync(string token)
         {
             var permissionData = await _storageProvider.AuthenticateAsync(token).ConfigureAwait(false);
-            try
+            return DeserializeToken(token, permissionData);
+        }
+        private static string ToJson(T t)
+        {
+            using (var stream = new MemoryStream())
             {
-                if (!string.IsNullOrEmpty(permissionData))
+                var dcs = new DataContractJsonSerializer(t.GetType());
+                dcs.WriteObject(stream, t);
+                stream.Position = 0;
+                using (var streamReader = new StreamReader(stream))
                 {
-                    return JsonConvert.DeserializeObject<T>(permissionData, _jsonSerializerSettings);
+                    var json = streamReader.ReadToEnd();
+
+                    return json.Replace("\\/", "/");
                 }
             }
-            catch (Exception e)
-            {
-                throw CustomException(token, permissionData, e);
-            }
-
-            return default(T);
         }
 
-        private static Exception CustomException(string token, string data, Exception e)
+        private static T FromJson(string jsonString)
         {
-            return new Exception($"Authenticate error: {e.Message}\r\nToken={token}\r\nData={data}", e);
+            using (var stream = new MemoryStream())
+            {
+                var dcs = new DataContractJsonSerializer(typeof(T));
+                var bytes = StringToUtf8ByteArray(jsonString);
+                stream.Write(bytes, 0, bytes.Length);
+                stream.Position = 0;
+
+                return (T)dcs.ReadObject(stream);
+            }
+        }
+
+        private static byte[] StringToUtf8ByteArray(string value)
+        {
+            var encoding = new UTF8Encoding();
+            var byteArray = encoding.GetBytes(value);
+            return byteArray;
         }
     }
 }
