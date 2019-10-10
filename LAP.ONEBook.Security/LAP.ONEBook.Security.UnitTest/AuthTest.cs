@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Moq;
 using Xunit;
 
@@ -12,28 +11,6 @@ namespace LAP.ONEBook.Security.UnitTest
         public AuthTest()
         {
             _mockStorage = new Mock<IStorageProvider>();
-        }
-
-        public static IEnumerable<object[]> SerializeJsonTestData
-        {
-            get
-            {
-                yield return new object[]
-                {
-                    new TestAuthSerializationClass { Name = "Local", Time = new DateTime(1, 2, 3, 4, 5, 6, 7, DateTimeKind.Local) },
-                    "{\"Name\":\"Local\",\"Time\":\"0001-02-03T04:05:06.007\"}"
-                };
-                yield return new object[]
-                {
-                    new TestAuthSerializationClass { Name = "Utc", Time = new DateTime(2, 3, 4, 5, 6, 7, 8, DateTimeKind.Utc) },
-                    "{\"Name\":\"Utc\",\"Time\":\"0002-03-04T05:06:07.008\"}"
-                };
-                yield return new object[]
-                {
-                    new TestAuthSerializationClass { Name = "Unspecified", Time = new DateTime(3, 4, 5, 6, 7, 8, 9, DateTimeKind.Unspecified) },
-                    "{\"Name\":\"Unspecified\",\"Time\":\"0003-04-05T06:07:08.009\"}"
-                };
-            }
         }
 
         [Theory]
@@ -67,7 +44,6 @@ namespace LAP.ONEBook.Security.UnitTest
             // Assert
             Assert.DoesNotContain('=', token);
             Assert.DoesNotContain('+', token);
-            Assert.DoesNotContain('/', token);
         }
 
         [Fact]
@@ -83,20 +59,19 @@ namespace LAP.ONEBook.Security.UnitTest
             _mockStorage.Verify(r => r.ApplyToken(token, It.IsAny<string>(), 1));
         }
 
-        [Theory]
-        [MemberData(nameof(SerializeJsonTestData))]
-        public void ApplyToken_StorageData_SerializeToJson(TestAuthSerializationClass data, string json)
+        [Fact]
+        public void ApplyToken_StorageData_SerializeToJson()
         {
             // Arrange
             var auth = new Auth<TestAuthSerializationClass>(_mockStorage.Object);
 
             // Action
-            auth.ApplyToken(data);
+            auth.ApplyToken(new TestAuthSerializationClass { Age = 123, Name = "abc" });
 
             // Assert
             _mockStorage.Verify(r => r.ApplyToken(
                 It.IsAny<string>(),
-                It.Is<string>(p => p == json),
+                It.Is<string>(p => p == "{\"Age\":123,\"Name\":\"abc\"}"),
                 It.IsAny<int>()));
         }
 
@@ -147,7 +122,6 @@ namespace LAP.ONEBook.Security.UnitTest
             // Assert
             Assert.DoesNotContain('=', token);
             Assert.DoesNotContain('+', token);
-            Assert.DoesNotContain('/', token);
         }
 
         [Fact]
@@ -163,20 +137,19 @@ namespace LAP.ONEBook.Security.UnitTest
             _mockStorage.Verify(r => r.ApplyTokenAsync(token, It.IsAny<string>(), 1));
         }
 
-        [Theory]
-        [MemberData(nameof(SerializeJsonTestData))]
-        public async void ApplyTokenAsync_StorageData_SerializeToJson(TestAuthSerializationClass data, string json)
+        [Fact]
+        public async void ApplyTokenAsync_StorageData_SerializeToJson()
         {
             // Arrange
             var auth = new Auth<TestAuthSerializationClass>(_mockStorage.Object);
 
             // Action
-            await auth.ApplyTokenAsync(data);
+            await auth.ApplyTokenAsync(new TestAuthSerializationClass { Name = "def", Age = 200 });
 
             // Assert
             _mockStorage.Verify(r => r.ApplyTokenAsync(
                 It.IsAny<string>(),
-                It.Is<string>(p => p == json),
+                It.Is<string>(p => p == "{\"Age\":200,\"Name\":\"def\"}"),
                 It.IsAny<int>()));
         }
 
@@ -201,14 +174,14 @@ namespace LAP.ONEBook.Security.UnitTest
         {
             // Arrange
             var auth = new Auth<TestAuthSerializationClass>(_mockStorage.Object);
-            _mockStorage.Setup(r => r.Authenticate("my-token")).Returns("{\"Name\":\"ABC\",\"Time\":\"1111-11-11T11:11:11.111\"}");
+            _mockStorage.Setup(r => r.Authenticate("my-token")).Returns("{\"Name\":\"xyz\",\"Age\":1}");
 
             // Action
             var actual = auth.Authenticate("my-token");
 
             // Assert
-            Assert.Equal("ABC", actual.Name);
-            Assert.Equal(new DateTime(1111, 11, 11, 11, 11, 11, 111), actual.Time);
+            Assert.Equal("xyz", actual.Name);
+            Assert.Equal(1, actual.Age);
         }
 
         [Fact]
@@ -216,14 +189,14 @@ namespace LAP.ONEBook.Security.UnitTest
         {
             // Arrange
             var auth = new Auth<TestAuthSerializationClass>(_mockStorage.Object);
-            _mockStorage.Setup(r => r.AuthenticateAsync("my-token")).ReturnsAsync("{\"Name\":\"ABC\",\"Time\":\"1111-11-11T11:11:11.111\"}");
+            _mockStorage.Setup(r => r.AuthenticateAsync("my-token")).ReturnsAsync("{\"Name\":\"ABC\",\"Age\":111");
 
             // Action
             var actual = await auth.AuthenticateAsync("my-token");
 
             // Assert
             Assert.Equal("ABC", actual.Name);
-            Assert.Equal(new DateTime(1111, 11, 11, 11, 11, 11, 111), actual.Time);
+            Assert.Equal(111, actual.Age);
         }
 
         [Fact]
@@ -320,7 +293,7 @@ namespace LAP.ONEBook.Security.UnitTest
         {
             public string Name { get; set; }
 
-            public DateTime Time { get; set; }
+            public int Age { get; set; }
         }
     }
 }
