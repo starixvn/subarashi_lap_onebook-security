@@ -1,5 +1,10 @@
 ﻿using System;
+using System.Runtime.Serialization;
+
 using Moq;
+
+using Newtonsoft.Json;
+
 using Xunit;
 
 namespace LAP.ONEBook.Security.UnitTest
@@ -174,14 +179,18 @@ namespace LAP.ONEBook.Security.UnitTest
         {
             // Arrange
             var auth = new Auth<TestAuthSerializationClass>(_mockStorage.Object);
-            _mockStorage.Setup(r => r.Authenticate("my-token")).Returns("{\"Name\":\"xyz\",\"Age\":1}");
+            _mockStorage.Setup(r => r.Authenticate("my-token"))
+                .Returns("{\"<ActionLink>k__BackingField\":\"/api/NotificationApi/Index\",\"<Currency>k__BackingField\":[{\"AgentId\":[29173034,29173042,29470955],\"Currency\":\"MYR\",\"CurrencyId\":2},{\"AgentId\":[28589030,28589036,28946751],\"Currency\":\"USD\",\"CurrencyId\":3},{\"AgentId\":[860379],\"Currency\":\"EUR\",\"CurrencyId\":6},{\"AgentId\":[1015422,1015423],\"Currency\":\"AUD\",\"CurrencyId\":9},{\"AgentId\":[28031433,28031438,28031443,28927811,28949625,28949628,29116702,29116708,29116716,29314284,29314288,29314291,29314294,29314297,29469096,29469098,29469100,29536582,29536585,29536588,29536592],\"Currency\":\"CNY\",\"CurrencyId\":13},{\"AgentId\":[3233923,28041170,28041171,28041179,28186750,28186751,28927829,28956769,28956774,29116738,29116742,29173019,29173022,29314233,29314241,29314244,29314249,29314254,29470741,29470745,29470747,29470749,29470751,29470753,29470756,29470758,29536613,29536616,29536618,29536620,29536622,29536624,29740145,29740147,31844017],\"Currency\":\"UUS\",\"CurrencyId\":20},{\"AgentId\":[29595890],\"Currency\":\"INH\",\"CurrencyId\":51},{\"AgentId\":[6006447],\"Currency\":\"INR\",\"CurrencyId\":61},{\"AgentId\":[29595908],\"Currency\":\"MKK\",\"CurrencyId\":70}],\"<IsAdminstrator>k__BackingField\":true,\"<Language>k__BackingField\":\"en\",\"<Permissions>k__BackingField\":[],\"<SiteName>k__BackingField\":\"12bet\",\"<UserID>k__BackingField\":\"vntest\",\"<UserName>k__BackingField\":\"vntest\",\"<UserSEQ>k__BackingField\":3761,\"<VendorID>k__BackingField\":\"12betv5\"}"
+
+
+);
 
             // Action
             var actual = auth.Authenticate("my-token");
 
             // Assert
-            Assert.Equal("xyz", actual.Name);
-            Assert.Equal(1, actual.Age);
+            Assert.Equal("12bet", actual.Name);
+            Assert.Equal(0, actual.Age);
         }
 
         [Fact]
@@ -291,9 +300,19 @@ namespace LAP.ONEBook.Security.UnitTest
 
         public class TestAuthSerializationClass
         {
+
             public string Name { get; set; }
 
             public int Age { get; set; }
+
+            [JsonProperty("<SiteName>k__BackingField")]
+            public string SiteName { get; set; }
+
+            [JsonProperty("<ActionLink>k__BackingField")]
+            private string LegacyActionLink { set { ActionLink = value; } }
+            public string ActionLink { get; set; }
+
         }
+
     }
 }

@@ -1,8 +1,8 @@
 ﻿using System;
-using System.IO;
-using System.Runtime.Serialization.Json;
 using System.Text;
 using System.Threading.Tasks;
+
+using Newtonsoft.Json;
 
 namespace LAP.ONEBook.Security
 {
@@ -79,31 +79,12 @@ namespace LAP.ONEBook.Security
         }
         private static string ToJson(T t)
         {
-            using (var stream = new MemoryStream())
-            {
-                var dcs = new DataContractJsonSerializer(t.GetType());
-                dcs.WriteObject(stream, t);
-                stream.Position = 0;
-                using (var streamReader = new StreamReader(stream))
-                {
-                    var json = streamReader.ReadToEnd();
-
-                    return json.Replace("\\/", "/");
-                }
-            }
+            return JsonConvert.SerializeObject(t);
         }
 
         private static T FromJson(string jsonString)
         {
-            using (var stream = new MemoryStream())
-            {
-                var dcs = new DataContractJsonSerializer(typeof(T));
-                var bytes = StringToUtf8ByteArray(jsonString);
-                stream.Write(bytes, 0, bytes.Length);
-                stream.Position = 0;
-
-                return (T)dcs.ReadObject(stream);
-            }
+            return JsonConvert.DeserializeObject<T>(jsonString);
         }
 
         private static byte[] StringToUtf8ByteArray(string value)
