@@ -1,104 +1,94 @@
 ﻿using System;
 using System.Text;
-using System.IO;
-using System.Runtime.Serialization.Json;
-using System.Diagnostics;
-using System.Data.SqlClient;
+using System.Threading.Tasks;
+
+using Newtonsoft.Json;
 
 namespace LAP.ONEBook.Security
 {
-    public class Auth<T>
+    public class Auth<T> : IAuth<T>
     {
-        private readonly SqlConnectionStringBuilder _sqlClientDBConnectionSB;
+        private const int TOKEN_TIME = 1;
         private readonly IStorageProvider _storageProvider;
-        public bool IsTest { set; get; }
 
-        public Auth(IStorageProvider StorageProvider)
+        protected Auth()
         {
-            _storageProvider = StorageProvider;
-        }
-        public Auth(string SqlClientDBConnectionString)
-        {
-            _sqlClientDBConnectionSB = new SqlConnectionStringBuilder(SqlClientDBConnectionString);
-
-            _storageProvider = new DefaultProvider(SqlClientDBConnectionString);
         }
 
-        public string ApplyToken(T t)
+        public Auth(IStorageProvider storageProvider)
         {
-            return ApplyToken(t, 1);
+            _storageProvider = storageProvider;
         }
 
-        public string ApplyToken(T t, int expiry = 1)
+        public string ApplyToken(T t) => ApplyToken(t, TOKEN_TIME);
+
+        public string ApplyToken(T t, int expiry)
         {
-            var g = Guid.NewGuid();
-            var GuidString = Convert.ToBase64String(g.ToByteArray());
-            GuidString = GuidString.Replace("=", "");
-            GuidString = GuidString.Replace("+", "");
+            GenerateTokenInfo(t, out string token, out string data);
 
-            _storageProvider.ApplyToken(GuidString, ToJson(t), expiry);
+            _storageProvider.ApplyToken(token, data, expiry);
 
-            return GuidString;
+            return token;
         }
 
-        public T Authenticate(string sToken)
+        private static void GenerateTokenInfo(T t, out string token, out string data)
         {
-            var sPermissionData = "";
-
-            sPermissionData = _storageProvider.Authenticate(sToken);
-            //
-            return sPermissionData.Length == 0 ? default(T) : FromJson(sPermissionData);
+            var guid = Guid.NewGuid().ToByteArray();
+            token = Convert.ToBase64String(guid).Replace("=", "").Replace("+", "");
+            data = ToJson(t);
         }
 
-        public bool Authenticate(string sToken, ref T t)
+        public Task<string> ApplyTokenAsync(T t) => ApplyTokenAsync(t, TOKEN_TIME);
+
+        public async Task<string> ApplyTokenAsync(T t, int expiry)
         {
-            var sPermissionData = "";
+            GenerateTokenInfo(t, out string token, out string data);
 
-            sPermissionData = _storageProvider.Authenticate(sToken);
+            await _storageProvider.ApplyTokenAsync(token, data, expiry).ConfigureAwait(false);
 
-            if (sPermissionData.Length == 0)
+            return token;
+        }
+
+        public T Authenticate(string token)
+        {
+            var permissionData = _storageProvider.Authenticate(token);
+            return DeserializeToken(token, permissionData);
+        }
+
+        private static T DeserializeToken(string token, string permissionData)
+        {
+            try
             {
-                t = default(T);
-                return false;
+                if (!string.IsNullOrEmpty(permissionData))
+                {
+                    return FromJson(permissionData);
+                }
             }
-            else
+            catch (Exception e)
             {
-                t = FromJson(sPermissionData);
-                return true;
+                throw new Exception($"Authenticate error: {e.Message}\r\nToken={token}\r\nData={permissionData}", e);
             }
+
+            return default;
         }
 
-
+        public async Task<T> AuthenticateAsync(string token)
+        {
+            var permissionData = await _storageProvider.AuthenticateAsync(token).ConfigureAwait(false);
+            return DeserializeToken(token, permissionData);
+        }
         private static string ToJson(T t)
         {
-            var stream = new MemoryStream();
-            var dcs = new DataContractJsonSerializer(t.GetType());
-            dcs.WriteObject(stream, t);
-
-            stream.Position = 0;
-            using (var streamReader = new StreamReader(stream))
-            {
-                var json = streamReader.ReadToEnd();
-
-                return json.Replace("\\/", "/");
-            }
+            return JsonConvert.SerializeObject(t);
         }
 
         private static T FromJson(string jsonString)
         {
-            var stream = new MemoryStream();
-            var dcs = new DataContractJsonSerializer(typeof(T));
-            var bytes = StringToUtf8ByteArray(jsonString);
-            stream.Write(bytes, 0, bytes.Length);
-            stream.Position = 0;
-
-            return (T)dcs.ReadObject(stream);
+            return JsonConvert.DeserializeObject<T>(jsonString);
         }
 
-        private static Byte[] StringToUtf8ByteArray(string value)
+        private static byte[] StringToUtf8ByteArray(string value)
         {
-            Debug.Assert(value != null);
-
             var encoding = new UTF8Encoding();
             var byteArray = encoding.GetBytes(value);
             return byteArray;

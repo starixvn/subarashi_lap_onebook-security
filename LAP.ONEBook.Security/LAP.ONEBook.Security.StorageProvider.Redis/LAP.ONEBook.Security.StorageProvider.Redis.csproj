@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net461;netcoreapp2.2</TargetFrameworks>
+    <Version>1.0.7</Version>
+    <Authors>bruce.bui</Authors>
+    <Company>NEX Labs</Company>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StackExchange.Redis" Version="2.0.601" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LAP.ONEBook.Security\LAP.ONEBook.Security.csproj" />
+  </ItemGroup>
+
+</Project>

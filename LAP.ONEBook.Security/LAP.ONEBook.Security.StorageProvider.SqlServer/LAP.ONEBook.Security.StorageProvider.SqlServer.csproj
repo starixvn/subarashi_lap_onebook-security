@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net461;netcoreapp2.2</TargetFrameworks>
+    <Version>1.0.7</Version>
+    <Authors>bruce.bui</Authors>
+    <Company>NEX Labs</Company>
+    <AssemblyVersion>1.0.6.0</AssemblyVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Data.SqlClient" Version="4.7.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LAP.ONEBook.Security\LAP.ONEBook.Security.csproj" />
+  </ItemGroup>
+
+</Project>
