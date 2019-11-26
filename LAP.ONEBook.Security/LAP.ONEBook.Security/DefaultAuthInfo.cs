@@ -27,7 +27,6 @@ namespace LAP.ONEBook.Security
         private string LegacyUserID { set { UserID = value; } }
         public string UserID { get; set; }
 
-
         [JsonProperty("<UserName>k__BackingField")]
         private string LegacyUserName { set { UserName = value; } }
         public string UserName { get; set; }
@@ -51,5 +50,13 @@ namespace LAP.ONEBook.Security
         [JsonProperty("<Currency>k__BackingField")]
         private IEnumerable<T2> LegacyCurrency { set { Currency = value; } }
         public IEnumerable<T2> Currency { get; set; }
+
+        [JsonProperty("<WhiteLabelID>k__BackingField")]
+        private int? LegacyWhiteLabelID { set { WhiteLabelID = value; } }
+        public int? WhiteLabelID { get; set; }
+
+        [JsonProperty("<IsMasterLicensee>k__BackingField")]
+        private bool LegacyIsMasterLicensee { set { IsMasterLicensee = value; } }
+        public bool IsMasterLicensee { get; set; }
     }
 }
